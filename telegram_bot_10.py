@@ -87,7 +87,7 @@ from aiogram.fsm.context import FSMContext
 from dotenv import load_dotenv
 
 from commands import commands
-from kereli_bot import db_get_all_products, db_insert_product, create_users, insert_user
+from kereli_bot import db_get_all_products, db_insert_product, insert_user, insert_orders, db_get_all_orders
 from keyboard import kb, ikb, buy_ikb
 from state import ProductStatesGroup, UserRegisterStatesGroup
 
@@ -115,6 +115,16 @@ async def cmd_registration(message: types.Message, state: FSMContext):
     await message.answer("Ism Familiya kiriting: ")
 
 
+@dp.message(Command('orders'))
+async def cmd_orders(message: types.Message):
+    user_id = message.from_user.id
+    user, products = await db_get_all_orders(int(user_id))
+    for product in products:
+        await message.answer(text=f"{user[1]}\n"
+                                  f"Zakazlaringiz\n"
+                                  f"Nomi: {product[1]}")
+
+
 @dp.message(UserRegisterStatesGroup.full_name)
 async def user_fullname(message: types.Message, state: FSMContext):
     await state.update_data(full_name=message.text)
@@ -130,6 +140,14 @@ async def user_phone(message: types.Message, state: FSMContext):
     await message.answer("Ro'yxatdan o'tdingiz! ")
 
 
+@dp.callback_query(F.data == 'savatchaga')
+async def savatchaga(call: types.CallbackQuery):
+    product_id = int(call.message.caption.split('id:')[-1])
+    user_id = call.from_user.id
+    await insert_orders(product_id, user_id)
+    await call.message.answer("Mahsulot savatchaga joylandi!")
+
+
 @dp.callback_query(F.data == 'get_all_product')
 async def get_all_product(call: types.CallbackQuery):
     product = db_get_all_products()
@@ -137,9 +155,11 @@ async def get_all_product(call: types.CallbackQuery):
     if not product:
         await call.message.answer("Mahsulot mavjud emas!")
     for product in product:
+        print(product)
         await call.message.answer_photo(photo=product[3],
                                         caption=f"Mahsulot nomi: {product[1]}\n"
-                                                f"Mahsulot narxi: {product[2]}\n",
+                                                f"Mahsulot narxi: {product[2]}\n"
+                                                f"Product id: {product[0]}",
                                         reply_markup=buy_ikb)
 
 
