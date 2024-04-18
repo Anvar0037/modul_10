@@ -1,6 +1,6 @@
 import sqlite3
 
-db_connect = sqlite3.connect('Telegram.sqlite3')
+db_connect = sqlite3.connect('d13.sqlite3')
 
 db_cursor = db_connect.cursor()
 
@@ -51,6 +51,7 @@ def create_table_product():
     """)
 
 
+create_table_product()
 def create_table_orders():
     db_cursor.execute("""
         CREATE TABLE IF NOT EXISTS orders(
@@ -60,6 +61,9 @@ def create_table_orders():
     """)
 
 
+create_table_orders()
+
+
 async def db_insert_product(title, price, photo_id):
     db_cursor.execute("""
             INSERT INTO product (title, price, photo)
@@ -67,10 +71,11 @@ async def db_insert_product(title, price, photo_id):
     db_connect.commit()
 
 
-def insert_orders(product_id, user_id):
+async def insert_orders(product_id, user_id):
     db_cursor.execute("""
             INSERT INTO orders (product_id, user_id)
             VALUES(?, ?)""", (product_id, user_id))
+    db_connect.commit()
 
 
 def db_get_all_products():
@@ -78,3 +83,25 @@ def db_get_all_products():
         SELECT * FROM product
     """).fetchall()
     return products
+
+
+async def db_get_all_orders(user_id):
+    orders = db_cursor.execute("""
+        SELECT * FROM orders WHERE user_id=?
+    """, (user_id,)).fetchall()
+
+    products = []
+    for order in orders:
+        product = db_cursor.execute("""
+        SELECT * FROM product WHERE id=?
+        """, (order[1],)).fetchone()
+
+        products.append(product)
+
+    user = db_cursor.execute("""
+        SELECT * FROM users WHERE telegram_id=?
+    """, (user_id,)).fetchone()
+    return user, products
+
+
+create_users()
