@@ -1,3 +1,7 @@
 aiogram==3.4.1
+<<<<<<< HEAD
 python-dotenv==1.0.1
 aiohttp-socks==0.8.4
+=======
+python-dotenv==1.0.1
+>>>>>>> origin/main
